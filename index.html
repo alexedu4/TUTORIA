@@ -1,63 +1,215 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geoportal UTPL</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geoportal Deslizamientos - Cantón Loja</title>
   <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
   <style>
-    /* Estilos para el mapa */
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-    }
-    #map {
-      height: 100vh;
-      width: 100vw;
-    }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    #map { width: 100%; height: 100%; }
     .header {
       position: absolute;
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       padding: 8px 12px;
-      border-radius: 4px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      border-radius: 5px;
       z-index: 1000;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      font-family: Arial, sans-serif;
+    }
+    .legend {
+      background: white;
+      line-height: 1.5em;
+      padding: 6px 8px;
+      border-radius: 5px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      font-family: Arial, sans-serif;
+    }
+    .legend i {
+      width: 18px; height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h2>Geoportal UTPL</h2>
-  </div>
+  <div class="header"><h3>Geoportal Deslizamientos - Cantón Loja</h3></div>
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
+  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
-    // Coordenadas aproximadas de UTPL, Loja, Ecuador
-    var latUTPL = -4.006;
-    var lonUTPL = -79.205;
+    // 1. Inicializar mapa
+    var map = L.map('map').setView([-4.011, -79.204], 12);
 
-    // Inicializar el mapa
-    var map = L.map('map').setView([latUTPL, lonUTPL], 15);
-
-    // Capa base de OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // 2. Capas base
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
+    var satellite = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OSM HOT'
+    });
 
-    // Añadir un marcador en la UTPL
-    var marker = L.marker([latUTPL, lonUTPL]).addTo(map);
-    marker.bindPopup('<b>UTPL</b><br>Universidad Técnica Particular de Loja').openPopup();
+    // 3. Control de escala
+    L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+    // 4. Límite del Cantón Loja (GeoJSON inline simplificado)
+    var cantonLoja = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-79.245, -4.100],
+              [-79.160, -4.100],
+              [-79.160, -3.950],
+              [-79.245, -3.950],
+              [-79.245, -4.100]
+            ]]
+          }
+        }
+      ]
+    };
+    var cantonLayer = L.geoJSON(cantonLoja, {
+      style: { color: '#0055A4', weight: 2, fillOpacity: 0.05 }
+    }).addTo(map);
+    map.fitBounds(cantonLayer.getBounds());
+
+    // 5. Capa de susceptibilidad a deslizamientos (polígonos de ejemplo)
+    var susceptibilityZones = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "susceptibility": "Alta" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-79.22, -4.085],
+              [-79.18, -4.085],
+              [-79.18, -4.02],
+              [-79.22, -4.02],
+              [-79.22, -4.085]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "susceptibility": "Media" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-79.23, -4.07],
+              [-79.195, -4.07],
+              [-79.195, -4.03],
+              [-79.23, -4.03],
+              [-79.23, -4.07]
+            ]]
+          }
+        }
+      ]
+    };
+    function styleSusceptibility(feature) {
+      var level = feature.properties.susceptibility;
+      var color = level === 'Alta' ? '#d73027' : level === 'Media' ? '#fc8d59' : '#fee08b';
+      return { color: color, weight: 1, fillOpacity: 0.4 };
+    }
+    var suscLayer = L.geoJSON(susceptibilityZones, { style: styleSusceptibility })
+      .bindPopup(function(layer) {
+        return '<b>Susceptibilidad:</b> ' + layer.feature.properties.susceptibility;
+      });
+
+    // 6. Eventos de deslizamientos (puntos de ejemplo)
+    var slidesEvents = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {"id": 'LS1', "date": '2023-05-10', "severity": 'Baja'},
+          "geometry": { "type": "Point", "coordinates": [-79.205, -4.040] }
+        },
+        {
+          "type": "Feature",
+          "properties": {"id": 'LS2', "date": '2024-01-15', "severity": 'Media'},
+          "geometry": { "type": "Point", "coordinates": [-79.210, -4.060] }
+        },
+        {
+          "type": "Feature",
+          "properties": {"id": 'LS3', "date": '2024-06-20', "severity": 'Alta'},
+          "geometry": { "type": "Point", "coordinates": [-79.220, -4.050] }
+        }
+      ]
+    };
+    function styleSeverity(feature) {
+      var s = feature.properties.severity;
+      var color = s === 'Alta' ? '#d73027' : s === 'Media' ? '#fc8d59' : '#fee08b';
+      return L.circleMarker(layer.getLatLng ? layer.getLatLng() : [0,0], {}), {
+        radius: 8,
+        fillColor: color,
+        color: '#000',
+        weight: 1,
+        fillOpacity: 0.8
+      };
+    }
+    // Cluster de eventos
+    var slideCluster = L.markerClusterGroup();
+    L.geoJSON(slidesEvents, {
+      pointToLayer: function(feature, latlng) {
+        var color = feature.properties.severity === 'Alta' ? '#d73027'
+          : feature.properties.severity === 'Media' ? '#fc8d59' : '#fee08b';
+        return L.circleMarker(latlng, {
+          radius: 8,
+          fillColor: color,
+          color: '#000',
+          weight: 1,
+          fillOpacity: 0.8
+        });
+      },
+      onEachFeature: function(feature, layer) {
+        var p = feature.properties;
+        layer.bindPopup('<b>ID:</b> ' + p.id + '<br><b>Fecha:</b> ' + p.date + '<br><b>Severidad:</b> ' + p.severity);
+      }
+    }).addTo(slideCluster);
+
+    // 7. Control de capas
+    L.control.layers(
+      { 'OSM': osm, 'Satélite': satellite },
+      { 'Límite Cantón': cantonLayer, 'Susceptibilidad': suscLayer, 'Eventos': slideCluster },
+      { collapsed: false }
+    ).addTo(map);
+
+    // 8. Leyenda combinada
+    var legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function() {
+      var div = L.DomUtil.create('div', 'legend');
+      div.innerHTML += '<h4>Susceptibilidad</h4>';
+      ['Alta','Media','Baja'].forEach(function(lvl) {
+        var c = lvl === 'Alta' ? '#d73027' : lvl === 'Media' ? '#fc8d59' : '#fee08b';
+        div.innerHTML += '<i style="background:' + c + '"></i> ' + lvl + '<br>';
+      });
+      div.innerHTML += '<h4>Eventos</h4>';
+      ['Alta','Media','Baja'].forEach(function(lvl) {
+        var c = lvl === 'Alta' ? '#d73027' : lvl === 'Media' ? '#fc8d59' : '#fee08b';
+        div.innerHTML += '<i style="background:' + c + '"></i> ' + lvl + '<br>';
+      });
+      return div;
+    };
+    legend.addTo(map);
+
   </script>
 </body>
 </html>
