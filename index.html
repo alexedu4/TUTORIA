@@ -13,31 +13,16 @@
     html, body { margin: 0; padding: 0; height: 100%; }
     #map { width: 100%; height: 100%; }
     .header {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      padding: 8px 12px;
-      border-radius: 5px;
-      z-index: 1000;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9); padding: 8px 12px;
+      border-radius: 5px; z-index: 1000; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
       font-family: Arial, sans-serif;
     }
-    .legend {
-      background: white;
-      line-height: 1.5em;
-      padding: 6px 8px;
-      border-radius: 5px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    .legend { background: white; line-height: 1.5em; padding: 6px 8px;
+      border-radius: 5px; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
       font-family: Arial, sans-serif;
     }
-    .legend i {
-      width: 18px; height: 18px;
-      float: left;
-      margin-right: 8px;
-      opacity: 0.8;
-    }
+    .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.8; }
   </style>
 </head>
 <body>
@@ -52,170 +37,53 @@
     var map = L.map('map').setView([-4.011, -79.204], 12);
 
     // 2. Capas base
-    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    var satellite = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OSM HOT'
-    });
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+    var satellite = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{ maxZoom:19, attribution:'&copy; OSM HOT' });
 
     // 3. Control de escala
-    L.control.scale({ metric: true, imperial: false }).addTo(map);
+    L.control.scale({metric:true, imperial:false}).addTo(map);
 
-    // 4. Límite del Cantón Loja (GeoJSON inline simplificado)
-    var cantonLoja = {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "properties": {},
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": [[
-              [-79.245, -4.100],
-              [-79.160, -4.100],
-              [-79.160, -3.950],
-              [-79.245, -3.950],
-              [-79.245, -4.100]
-            ]]
-          }
-        }
-      ]
-    };
-    var cantonLayer = L.geoJSON(cantonLoja, {
-      style: { color: '#0055A4', weight: 2, fillOpacity: 0.05 }
-    }).addTo(map);
+    // 4. Límite del Cantón Loja
+    var cantonLoja = {"type":"FeatureCollection","features":[{ "type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-79.245,-4.100],[-79.160,-4.100],[-79.160,-3.950],[-79.245,-3.950],[-79.245,-4.100]]]} }]};
+    var cantonLayer = L.geoJSON(cantonLoja,{style:{color:'#0055A4',weight:2,fillOpacity:0.05}}).addTo(map);
     map.fitBounds(cantonLayer.getBounds());
 
-    // 5. Capa de susceptibilidad a deslizamientos (polígonos de ejemplo)
-    var susceptibilityZones = {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "properties": { "susceptibility": "Alta" },
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": [[
-              [-79.22, -4.085],
-              [-79.18, -4.085],
-              [-79.18, -4.02],
-              [-79.22, -4.02],
-              [-79.22, -4.085]
-            ]]
-          }
-        },
-        {
-          "type": "Feature",
-          "properties": { "susceptibility": "Media" },
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": [[
-              [-79.23, -4.07],
-              [-79.195, -4.07],
-              [-79.195, -4.03],
-              [-79.23, -4.03],
-              [-79.23, -4.07]
-            ]]
-          }
-        },
-        {
-          "type": "Feature",
-          "properties": { "susceptibility": "Baja" },
-          "geometry": {
-            "type": "Polygon",
-            "coordinates": [[
-              [-79.235, -4.095],
-              [-79.205, -4.095],
-              [-79.205, -4.015],
-              [-79.235, -4.015],
-              [-79.235, -4.095]
-            ]]
-          }
-        }
-      ]
-    };
-    function styleSusceptibility(feature) {
-      var level = feature.properties.susceptibility;
-      var color = level === 'Alta' ? '#d73027' : level === 'Media' ? '#fc8d59' : '#ffeda0';
-      return { color: color, weight: 1, fillOpacity: 0.5 };
-    }
-    var suscLayer = L.geoJSON(susceptibilityZones, { style: styleSusceptibility })
-      .bindPopup(function(layer) {
-        return '<b>Susceptibilidad:</b> ' + layer.feature.properties.susceptibility;
-      });
+    // 5. Susceptibilidad a deslizamientos (áreas con detalles)
+    var susceptibilityZones = {"type":"FeatureCollection","features":[
+      {"type":"Feature","properties":{"susceptibility":"Alta","area_km2":2.5,"houses":120},"geometry":{"type":"Polygon","coordinates":[[[-79.22,-4.085],[-79.18,-4.085],[-79.18,-4.02],[-79.22,-4.02],[-79.22,-4.085]]] }},
+      {"type":"Feature","properties":{"susceptibility":"Media","area_km2":1.8,"houses":80},"geometry":{"type":"Polygon","coordinates":[[[-79.23,-4.07],[-79.195,-4.07],[-79.195,-4.03],[-79.23,-4.03],[-79.23,-4.07]]] }},
+      {"type":"Feature","properties":{"susceptibility":"Baja","area_km2":3.1,"houses":50},"geometry":{"type":"Polygon","coordinates":[[[-79.235,-4.095],[-79.205,-4.095],[-79.205,-4.015],[-79.235,-4.015],[-79.235,-4.095]]] }}
+    ]};
+    function styleSusceptibility(f){ var lvl=f.properties.susceptibility; var color=lvl==='Alta'?'#d73027':lvl==='Media'?'#fc8d59':'#ffeda0'; return {color:color,weight:1,fillOpacity:0.5}; }
+    var suscLayer=L.geoJSON(susceptibilityZones,{style:styleSusceptibility,onEachFeature:function(f,layer){ var p=f.properties; layer.bindPopup('<b>Susceptibilidad:</b> '+p.susceptibility+'<br/><b>Área:</b> '+p.area_km2+' km²<br/><b>Viviendas:</b> '+p.houses); }});
 
-    // 6. Eventos de deslizamientos (puntos de ejemplo)
-    var slidesEvents = {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "properties": { "id": 'LS1', "date": '2023-05-10', "severity": 'Baja' },
-          "geometry": { "type": "Point", "coordinates": [-79.205, -4.040] }
-        },
-        {
-          "type": "Feature",
-          "properties": { "id": 'LS2', "date": '2024-01-15', "severity": 'Media' },
-          "geometry": { "type": "Point", "coordinates": [-79.210, -4.060] }
-        },
-        {
-          "type": "Feature",
-          "properties": { "id": 'LS3', "date": '2024-06-20', "severity": 'Alta' },
-          "geometry": { "type":("Point"), "coordinates": [-79.220, -4.050] }
-        }
-      ]
-    };
-    var slideCluster = L.markerClusterGroup();
-    L.geoJSON(slidesEvents, {
-      pointToLayer: function(feature, latlng) {
-        var sev = feature.properties.severity;
-        var color = sev === 'Alta' ? '#6a3d9a' : sev === 'Media' ? '#1f78b4' : '#33a02c';
-        return L.circleMarker(latlng, {
-          radius: 12,
-          fillColor: color,
-          color: '#000',
-          weight: 1,
-          fillOpacity: 0.8
-        });
-      },
-      onEachFeature: function(feature, layer) {
-        var p = feature.properties;
-        layer.bindPopup('<b>ID:</b> ' + p.id + '<br><b>Fecha:</b> ' + p.date + '<br><b>Severidad:</b> ' + p.severity);
-      }
-    }).addTo(slideCluster);
+    // 6. Eventos de deslizamientos (10 puntos de ejemplo)
+    var slidesEvents={"type":"FeatureCollection","features":[
+      {"type":"Feature","properties":{"id":"LS1","date":"2023-05-10","severity":"Baja","area_ha":0.3,"houses_affected":5,"type":"Rotacional"},"geometry":{"type":"Point","coordinates":[-79.205,-4.040]}},
+      {"type":"Feature","properties":{"id":"LS2","date":"2024-01-15","severity":"Media","area_ha":0.7,"houses_affected":15,"type":"Translacional"},"geometry":{"type":"Point","coordinates":[-79.210,-4.060]}},
+      {"type":"Feature","properties":{"id":"LS3","date":"2024-06-20","severity":"Alta","area_ha":1.2,"houses_affected":40,"type":"Flujo de tierra"},"geometry":{"type":"Point","coordinates":[-79.220,-4.050]}},
+      {"type":"Feature","properties":{"id":"LS4","date":"2023-11-02","severity":"Media","area_ha":0.5,"houses_affected":10,"type":"Rotacional"},"geometry":{"type":"Point","coordinates":[-79.215,-4.070]}},
+      {"type":"Feature","properties":{"id":"LS5","date":"2024-03-18","severity":"Baja","area_ha":0.2,"houses_affected":3,"type":"Hundimiento"},"geometry":{"type":"Point","coordinates":[-79.200,-4.080]}},
+      {"type":"Feature","properties":{"id":"LS6","date":"2023-09-25","severity":"Alta","area_ha":1.5,"houses_affected":50,"type":"Desprendimiento"},"geometry":{"type":"Point","coordinates":[-79.230,-4.030]}},
+      {"type":"Feature","properties":{"id":"LS7","date":"2024-05-05","severity":"Media","area_ha":0.8,"houses_affected":20,"type":"Translacional"},"geometry":{"type":"Point","coordinates":[-79.190,-4.055]}},
+      {"type":"Feature","properties":{"id":"LS8","date":"2023-12-12","severity":"Baja","area_ha":0.4,"houses_affected":8,"type":"Flujo de barro"},"geometry":{"type":"Point","coordinates":[-79.175,-4.065]}},
+      {"type":"Feature","properties":{"id":"LS9","date":"2024-07-30","severity":"Alta","area_ha":1.1,"houses_affected":35,"type":"Rotacional"},"geometry":{"type":"Point","coordinates":[-79.185,-4.035]}},
+      {"type":"Feature","properties":{"id":"LS10","date":"2024-08-14","severity":"Media","area_ha":0.6,"houses_affected":12,"type":"Desprendimiento"},"geometry":{"type":"Point","coordinates":[-79.195,-4.080]}}
+    ]};
+    var slideCluster=L.markerClusterGroup();
+    L.geoJSON(slidesEvents,{pointToLayer:function(f,latlng){ var sev=f.properties.severity; var color=sev==='Alta'?'#6a3d9a':sev==='Media'?'#1f78b4':'#33a02c'; return L.circleMarker(latlng,{radius:14,fillColor:color,color:'#000',weight:1,fillOpacity:0.9}); },onEachFeature:function(f,layer){ var p=f.properties; layer.bindPopup('<b>ID:</b> '+p.id+'<br/><b>Fecha:</b> '+p.date+'<br/><b>Severidad:</b> '+p.severity+'<br/><b>Tipo:</b> '+p.type+'<br/><b>Área:</b> '+p.area_ha+' ha<br/><b>Viviendas afectadas:</b> '+p.houses_affected); }}).addTo(slideCluster);
 
     // 7. Control de capas
-    L.control.layers(
-      { 'OSM': osm, 'Satélite': satellite },
-      { 'Límite Cantón': cantonLayer, 'Susceptibilidad': suscLayer, 'Eventos': slideCluster },
-      { collapsed: false }
-    ).addTo(map);
+    L.control.layers({'OSM':osm,'Satélite':satellite},{'Límite Cantón':cantonLayer,'Susceptibilidad':suscLayer,'Eventos':slideCluster},{collapsed:false}).addTo(map);
 
     // 8. Leyenda combinada
-    var legend = L.control({ position: 'bottomright' });
-    legend.onAdd = function() {
-      var div = L.DomUtil.create('div', 'legend');
-      div.innerHTML += '<h4>Susceptibilidad</h4>';
-      var suscLevels = [ ['Alta','#d73027'], ['Media','#fc8d59'], ['Baja','#ffeda0'] ];
-      suscLevels.forEach(function(item) {
-        div.innerHTML += '<i style="background:' + item[1] + '"></i> ' + item[0] + '<br>';
-      });
-      div.innerHTML += '<h4>Eventos</h4>';
-      var evLevels = [ ['Alta','#6a3d9a'], ['Media','#1f78b4'], ['Baja','#33a02c'] ];
-      evLevels.forEach(function(item) {
-        div.innerHTML += '<i style="background:' + item[1] + '"></i> ' + item[0] + '<br>';
-      });
-      return div;
-    };
+    var legend=L.control({position:'bottomright'});
+    legend.onAdd=function(){ var div=L.DomUtil.create('div','legend'); div.innerHTML+='<h4>Susceptibilidad</h4>'; [['Alta','#d73027'],['Media','#fc8d59'],['Baja','#ffeda0']].forEach(function(i){div.innerHTML+='<i style="background:'+i[1]+'"></i> '+i[0]+'<br>';}); div.innerHTML+='<h4>Eventos</h4>'; [['Alta','#6a3d9a'],['Media','#1f78b4'],['Baja','#33a02c']].forEach(function(i){div.innerHTML+='<i style="background:'+i[1]+'"></i> '+i[0]+'<br>';}); return div; };
     legend.addTo(map);
 
-    // Añadir capas inicialmente
+    // Mostrar capas por defecto
     suscLayer.addTo(map);
     slideCluster.addTo(map);
-
   </script>
 </body>
 </html>
