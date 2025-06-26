@@ -120,13 +120,27 @@
               [-79.23, -4.07]
             ]]
           }
+        },
+        {
+          "type": "Feature",
+          "properties": { "susceptibility": "Baja" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-79.235, -4.095],
+              [-79.205, -4.095],
+              [-79.205, -4.015],
+              [-79.235, -4.015],
+              [-79.235, -4.095]
+            ]]
+          }
         }
       ]
     };
     function styleSusceptibility(feature) {
       var level = feature.properties.susceptibility;
-      var color = level === 'Alta' ? '#d73027' : level === 'Media' ? '#fc8d59' : '#fee08b';
-      return { color: color, weight: 1, fillOpacity: 0.4 };
+      var color = level === 'Alta' ? '#d73027' : level === 'Media' ? '#fc8d59' : '#ffeda0';
+      return { color: color, weight: 1, fillOpacity: 0.5 };
     }
     var suscLayer = L.geoJSON(susceptibilityZones, { style: styleSusceptibility })
       .bindPopup(function(layer) {
@@ -139,40 +153,28 @@
       "features": [
         {
           "type": "Feature",
-          "properties": {"id": 'LS1', "date": '2023-05-10', "severity": 'Baja'},
+          "properties": { "id": 'LS1', "date": '2023-05-10', "severity": 'Baja' },
           "geometry": { "type": "Point", "coordinates": [-79.205, -4.040] }
         },
         {
           "type": "Feature",
-          "properties": {"id": 'LS2', "date": '2024-01-15', "severity": 'Media'},
+          "properties": { "id": 'LS2', "date": '2024-01-15', "severity": 'Media' },
           "geometry": { "type": "Point", "coordinates": [-79.210, -4.060] }
         },
         {
           "type": "Feature",
-          "properties": {"id": 'LS3', "date": '2024-06-20', "severity": 'Alta'},
-          "geometry": { "type": "Point", "coordinates": [-79.220, -4.050] }
+          "properties": { "id": 'LS3', "date": '2024-06-20', "severity": 'Alta' },
+          "geometry": { "type":("Point"), "coordinates": [-79.220, -4.050] }
         }
       ]
     };
-    function styleSeverity(feature) {
-      var s = feature.properties.severity;
-      var color = s === 'Alta' ? '#d73027' : s === 'Media' ? '#fc8d59' : '#fee08b';
-      return L.circleMarker(layer.getLatLng ? layer.getLatLng() : [0,0], {}), {
-        radius: 8,
-        fillColor: color,
-        color: '#000',
-        weight: 1,
-        fillOpacity: 0.8
-      };
-    }
-    // Cluster de eventos
     var slideCluster = L.markerClusterGroup();
     L.geoJSON(slidesEvents, {
       pointToLayer: function(feature, latlng) {
-        var color = feature.properties.severity === 'Alta' ? '#d73027'
-          : feature.properties.severity === 'Media' ? '#fc8d59' : '#fee08b';
+        var sev = feature.properties.severity;
+        var color = sev === 'Alta' ? '#6a3d9a' : sev === 'Media' ? '#1f78b4' : '#33a02c';
         return L.circleMarker(latlng, {
-          radius: 8,
+          radius: 12,
           fillColor: color,
           color: '#000',
           weight: 1,
@@ -197,18 +199,22 @@
     legend.onAdd = function() {
       var div = L.DomUtil.create('div', 'legend');
       div.innerHTML += '<h4>Susceptibilidad</h4>';
-      ['Alta','Media','Baja'].forEach(function(lvl) {
-        var c = lvl === 'Alta' ? '#d73027' : lvl === 'Media' ? '#fc8d59' : '#fee08b';
-        div.innerHTML += '<i style="background:' + c + '"></i> ' + lvl + '<br>';
+      var suscLevels = [ ['Alta','#d73027'], ['Media','#fc8d59'], ['Baja','#ffeda0'] ];
+      suscLevels.forEach(function(item) {
+        div.innerHTML += '<i style="background:' + item[1] + '"></i> ' + item[0] + '<br>';
       });
       div.innerHTML += '<h4>Eventos</h4>';
-      ['Alta','Media','Baja'].forEach(function(lvl) {
-        var c = lvl === 'Alta' ? '#d73027' : lvl === 'Media' ? '#fc8d59' : '#fee08b';
-        div.innerHTML += '<i style="background:' + c + '"></i> ' + lvl + '<br>';
+      var evLevels = [ ['Alta','#6a3d9a'], ['Media','#1f78b4'], ['Baja','#33a02c'] ];
+      evLevels.forEach(function(item) {
+        div.innerHTML += '<i style="background:' + item[1] + '"></i> ' + item[0] + '<br>';
       });
       return div;
     };
     legend.addTo(map);
+
+    // Añadir capas inicialmente
+    suscLayer.addTo(map);
+    slideCluster.addTo(map);
 
   </script>
 </body>
